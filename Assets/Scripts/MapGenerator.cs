@@ -19,12 +19,16 @@ public class MapGenerator : MonoBehaviour
     void Start()
     {
         GenerateMap();
+        GetComponent<MeshGenerator>().GenerateMesh(map, 1);
     }
 
     void Update()
     {
         if (Input.GetMouseButton(0))
+        {
             GenerateMap();
+            GetComponent<MeshGenerator>().GenerateMesh(map, 1);
+        }
     }
 
     void GenerateMap()
@@ -85,9 +89,7 @@ public class MapGenerator : MonoBehaviour
         return wallCount;
     }
     
-
-
-    private void OnDrawGizmos()
+    /*private void OnDrawGizmos()
     {
         if(map!= null) 
             for(int ii=0; ii< width;ii++)
@@ -97,5 +99,5 @@ public class MapGenerator : MonoBehaviour
                     Vector3 pos = new Vector3(-width / 2 + ii + 0.5f, 0, -height / 2 + jj +0.5f);
                     Gizmos.DrawCube(pos, Vector3.one);
                 }
-    }
+    }*/
 }
