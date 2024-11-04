@@ -5,36 +5,121 @@ using UnityEngine;
 public class MeshGenerator : MonoBehaviour
 {
     public SquareGrid squareGrid;
-    public void GenerateMesh(int[,] map, float sqaureSize)
+    public List<Vector3> vertices;
+    public List<int> triangles;
+    public void GenerateMesh(int[,] map, float squareSize)
     {
-        squareGrid = new SquareGrid(map, sqaureSize);
+        squareGrid = new SquareGrid(map, squareSize);
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+
+        for (int x = 0; x < squareGrid.squares.GetLength(0); x++)
+        {
+            for (int y = 0; y < squareGrid.squares.GetLength(1); y++)
+            {
+                TriangulateSquare(squareGrid.squares[x, y]);
+            }
+        }
+
+
+        Mesh mesh = new Mesh();
+        GetComponent<MeshFilter>().mesh = mesh;
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.RecalculateNormals();
     }
 
-    private void OnDrawGizmos()
+    public void MeshFromPoints(params Node[] points)
     {
-        if(squareGrid != null)
-            for(int ii=0; ii < squareGrid.squares.GetLength(0); ii++)
-                for(int jj=0; jj < squareGrid.squares.GetLength(1); jj++)
-                {
-                    Gizmos.color = (squareGrid.squares[ii, jj].topLeft.active) ? Color.red : Color.white;
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].topLeft.position, Vector3.one * 0.4f);
+        AssignVertices(points);
 
-                    Gizmos.color = (squareGrid.squares[ii, jj].topRight.active) ? Color.red : Color.white;
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].topRight.position, Vector3.one * 0.4f);
+        if(points.Length >= 3)
+            CreateTriangule(points[0], points[1], points[2]); 
+        if(points.Length >= 4)
+            CreateTriangule(points[0], points[2], points[3]);
+        if(points.Length >= 5)
+            CreateTriangule(points[0], points[3], points[4]);
+        if(points.Length >= 6)
+            CreateTriangule(points[0], points[4], points[5]);
+    }
 
-                    Gizmos.color = (squareGrid.squares[ii, jj].bottomRight.active) ? Color.red : Color.white;
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].bottomRight.position, Vector3.one * 0.4f);
+    public void AssignVertices(Node[] points)
+    {
+        for(int ii = 0; ii < points.Length; ii++)
+            if (points[ii].vertexIndex == -1)
+            {
+                points[ii].vertexIndex = vertices.Count;
+                vertices.Add(points[ii].position);
+            }
+    }
 
-                    Gizmos.color = (squareGrid.squares[ii, jj].bottomLeft.active) ? Color.red : Color.white;
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].bottomLeft.position, Vector3.one * 0.4f);
-                    
-                    Gizmos.color = Color.grey;
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].centerTop.position, Vector3.one * 0.15f);
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].centerRight.position, Vector3.one * 0.15f);
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].centerBottom.position, Vector3.one * 0.15f);
-                    Gizmos.DrawCube(squareGrid.squares[ii, jj].centerLeft.position, Vector3.one * 0.15f);
+    public void CreateTriangule(Node a, Node b, Node c)
+    {
+        triangles.Add(a.vertexIndex);
+        triangles.Add(b.vertexIndex);
+        triangles.Add(c.vertexIndex);
+    }
 
-                }
+    void TriangulateSquare(Square square)
+    {
+        switch (square.configuration)
+        {
+            case 0:
+                break;
+
+            // 1 points:
+            case 1:
+                MeshFromPoints(square.centreBottom, square.bottomLeft, square.centreLeft);
+                break;
+            case 2:
+                MeshFromPoints(square.centreRight, square.bottomRight, square.centreBottom);
+                break;
+            case 4:
+                MeshFromPoints(square.centreTop, square.topRight, square.centreRight);
+                break;
+            case 8:
+                MeshFromPoints(square.topLeft, square.centreTop, square.centreLeft);
+                break;
+
+            // 2 points:
+            case 3:
+                MeshFromPoints(square.centreRight, square.bottomRight, square.bottomLeft, square.centreLeft);
+                break;
+            case 6:
+                MeshFromPoints(square.centreTop, square.topRight, square.bottomRight, square.centreBottom);
+                break;
+            case 9:
+                MeshFromPoints(square.topLeft, square.centreTop, square.centreBottom, square.bottomLeft);
+                break;
+            case 12:
+                MeshFromPoints(square.topLeft, square.topRight, square.centreRight, square.centreLeft);
+                break;
+            case 5:
+                MeshFromPoints(square.centreTop, square.topRight, square.centreRight, square.centreBottom, square.bottomLeft, square.centreLeft);
+                break;
+            case 10:
+                MeshFromPoints(square.topLeft, square.centreTop, square.centreRight, square.bottomRight, square.centreBottom, square.centreLeft);
+                break;
+
+            // 3 point:
+            case 7:
+                MeshFromPoints(square.centreTop, square.topRight, square.bottomRight, square.bottomLeft, square.centreLeft);
+                break;
+            case 11:
+                MeshFromPoints(square.topLeft, square.centreTop, square.centreRight, square.bottomRight, square.bottomLeft);
+                break;
+            case 13:
+                MeshFromPoints(square.topLeft, square.topRight, square.centreRight, square.centreBottom, square.bottomLeft);
+                break;
+            case 14:
+                MeshFromPoints(square.topLeft, square.topRight, square.bottomRight, square.centreBottom, square.centreLeft);
+                break;
+
+            // 4 point:
+            case 15:
+                MeshFromPoints(square.topLeft, square.topRight, square.bottomRight, square.bottomLeft);
+                break;
+        }
     }
 
     public class SquareGrid
@@ -49,35 +134,51 @@ public class MeshGenerator : MonoBehaviour
             float mapHeight = nodeCountY * squareSize;
 
             ControlNode[,] controlNodes = new ControlNode[nodeCountX, nodeCountY];
-            for(int ii=0; ii < nodeCountX; ii++)
+            for (int x = 0; x < nodeCountX; x++)
             {
-                for(int jj=0; jj < nodeCountY; jj++) {
-                    Vector3 pos = new Vector3(-mapWidth / 2 + ii * squareSize / 2, 0, -mapHeight + jj * squareSize);
-                    controlNodes[ii, jj] = new ControlNode(pos, map[ii, jj] == 1, squareSize);
+                for (int y = 0; y < nodeCountY; y++)
+                {
+                    Vector3 pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, 0, -mapHeight / 2 + y * squareSize + squareSize / 2);
+                    controlNodes[x, y] = new ControlNode(pos, map[x, y] == 1, squareSize);
                 }
             }
+
             squares = new Square[nodeCountX-1, nodeCountY-1];
-            for(int ii=0; ii<nodeCountX-1; ii++)
-                for(int jj=0; jj<nodeCountY-1; jj++)
-                    squares[ii, jj] = new Square(controlNodes[ii, jj+1], controlNodes[ii+1, jj+1], controlNodes[ii+1, jj], controlNodes[ii, jj]);
+            for (int x = 0; x < nodeCountX - 1; x++)
+            {
+                for (int y = 0; y < nodeCountY - 1; y++)
+                {
+                    squares[x, y] = new Square(controlNodes[x, y + 1], controlNodes[x + 1, y + 1], controlNodes[x + 1, y], controlNodes[x, y]);
+                }
+            }
         }
     }
     public class Square
     {
-        public ControlNode topLeft, topRight, bottomLeft, bottomRight;
-        public Node centerTop, centerRight, centerBottom, centerLeft;
-        
-        public Square(ControlNode topLeft, ControlNode topRight, ControlNode bottomLeft, ControlNode bottomRight)
+        public ControlNode topLeft, topRight, bottomRight, bottomLeft;
+        public Node centreTop, centreRight, centreBottom, centreLeft;
+        public int configuration;
+
+        public Square(ControlNode topLeft, ControlNode topRight, ControlNode bottomRight, ControlNode bottomLeft)
         {
             this.topLeft = topLeft;
-            this.topRight = topRight;   
-            this.bottomLeft = bottomLeft;
+            this.topRight = topRight;
             this.bottomRight = bottomRight;
+            this.bottomLeft = bottomLeft;
 
-            centerTop = topLeft.right;
-            centerRight = bottomRight.above;
-            centerBottom = bottomLeft.right;
-            centerLeft = bottomLeft.above;
+            centreTop = topLeft.right;
+            centreRight = bottomRight.above;
+            centreBottom = bottomLeft.right;
+            centreLeft = bottomLeft.above;
+
+            if (topLeft.active)
+                configuration += 8;
+            if (topRight.active)
+                configuration += 4;
+            if (bottomRight.active)
+                configuration += 2;
+            if (bottomLeft.active)
+                configuration += 1;
         }
     }
     public class Node
@@ -99,8 +200,8 @@ public class MeshGenerator : MonoBehaviour
         public ControlNode(Vector3 pos, bool active, float squareSize) : base(pos)
         {
             this.active = active;
-            above = new Node(position + Vector3.forward * squareSize / 2);
-            right = new Node(position + Vector3.right * squareSize / 2);
+            above = new Node(position + Vector3.forward * squareSize / 2f);
+            right = new Node(position + Vector3.right * squareSize / 2f);
         }
     }
 }

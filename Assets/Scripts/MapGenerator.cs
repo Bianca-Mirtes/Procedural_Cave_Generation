@@ -19,16 +19,12 @@ public class MapGenerator : MonoBehaviour
     void Start()
     {
         GenerateMap();
-        GetComponent<MeshGenerator>().GenerateMesh(map, 1);
     }
 
     void Update()
     {
         if (Input.GetMouseButton(0))
-        {
             GenerateMap();
-            GetComponent<MeshGenerator>().GenerateMesh(map, 1);
-        }
     }
 
     void GenerateMap()
@@ -38,6 +34,8 @@ public class MapGenerator : MonoBehaviour
 
         for(int ii=0; ii < SmoothNumber; ii++)
             SmoothMap();
+
+        GetComponent<MeshGenerator>().GenerateMesh(map, 1);
     }
 
     void RandomFillMap()
@@ -47,15 +45,20 @@ public class MapGenerator : MonoBehaviour
 
         System.Random pseudoRandom = new System.Random(seed.GetHashCode());
 
-        for (int ii = 0; ii < width; ii++)
-            for (int jj = 0; jj < height; jj++)
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
             {
-                if (ii == 0 || jj == 0 || ii == width - 1 || jj == height - 1)
-                    map[ii, jj] = 1;
+                if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
+                {
+                    map[x, y] = 1;
+                }
                 else
-                    map[ii, jj] = (pseudoRandom.Next(0, 100) < randomFillPercent) ? 1 : 0;
-
+                {
+                    map[x, y] = (pseudoRandom.Next(0, 100) < randomFillPercent) ? 1 : 0;
+                }
             }
+        }
     }
 
     void SmoothMap()
@@ -67,37 +70,32 @@ public class MapGenerator : MonoBehaviour
 
                 if(neighboutWallTiles > 4)
                     map[ii, jj] = 1;
-                else
+                else if(neighboutWallTiles < 4)
                     map[ii, jj] = 0;
             }
     }
 
-    int GetSurroundWallCount(int x, int y)
+    int GetSurroundWallCount(int gridX, int gridY)
     {
         int wallCount = 0;
-        for (int neighbourX = x - 1; neighbourX <= x + 1; neighbourX++)
-            for (int neighbourY = y - 1; neighbourY <= y + 1; neighbourY++)
+        for (int neighbourX = gridX - 1; neighbourX <= gridX + 1; neighbourX++)
+        {
+            for (int neighbourY = gridY - 1; neighbourY <= gridY + 1; neighbourY++)
+            {
                 if (neighbourX >= 0 && neighbourX < width && neighbourY >= 0 && neighbourY < height)
                 {
-                    if (neighbourX != x || neighbourY != y) // passando pelos vizinhos ele passa por ele mesmo
+                    if (neighbourX != gridX || neighbourY != gridY)
+                    {
                         wallCount += map[neighbourX, neighbourY];
+                    }
                 }
                 else
                 {
                     wallCount++;
                 }
+            }
+        }
+
         return wallCount;
     }
-    
-    /*private void OnDrawGizmos()
-    {
-        if(map!= null) 
-            for(int ii=0; ii< width;ii++)
-                for( int jj=0; jj< height; jj++)
-                {
-                    Gizmos.color = (map[ii, jj] == 1) ? Color.red : Color.white;
-                    Vector3 pos = new Vector3(-width / 2 + ii + 0.5f, 0, -height / 2 + jj +0.5f);
-                    Gizmos.DrawCube(pos, Vector3.one);
-                }
-    }*/
 }
