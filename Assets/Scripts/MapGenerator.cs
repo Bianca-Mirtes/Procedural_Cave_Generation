@@ -35,7 +35,17 @@ public class MapGenerator : MonoBehaviour
         for(int ii=0; ii < SmoothNumber; ii++)
             SmoothMap();
 
-        GetComponent<MeshGenerator>().GenerateMesh(map, 1);
+        int borderSize = 5;
+        int[,] borderMap = new int[width + borderSize * 2, height + borderSize * 2];
+
+        for (int ii = 0; ii < borderMap.GetLength(0); ii++)
+            for (int jj = 0; jj < borderMap.GetLength(1); jj++)
+                if (ii >= borderSize && ii < width + borderSize && jj >= borderSize && jj < height + borderSize)
+                    borderMap[ii, jj] = map[ii - borderSize, jj - borderSize];
+                else
+                    borderMap[ii, jj] = 1;
+
+        GetComponent<MeshGenerator>().GenerateMesh(borderMap, 1);
     }
 
     void RandomFillMap()
