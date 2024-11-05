@@ -241,9 +241,9 @@ MonoBehaviour:
   width: 70
   height: 40
   SmoothNumber: 5
-  seed: 
-  useRandomSeed: 1
-  randomFillPercent: 49
+  seed: 23,70566
+  useRandomSeed: 0
+  randomFillPercent: 46
 --- !u!4 &504842948
 Transform:
   m_ObjectHideFlags: 0
