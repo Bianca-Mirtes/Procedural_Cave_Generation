@@ -242,7 +242,7 @@ MonoBehaviour:
   height: 40
   SmoothNumber: 5
   seed: 23,70566
-  useRandomSeed: 0
+  useRandomSeed: 1
   randomFillPercent: 46
 --- !u!4 &504842948
 Transform:
