@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class MeshGenerator : MonoBehaviour
@@ -8,6 +9,8 @@ public class MeshGenerator : MonoBehaviour
     public List<Vector3> vertices;
     public List<int> triangles;
     public MeshFilter walls;
+    public MeshFilter cave;
+    public bool is2D;
 
     Dictionary<int, List<Triangle>> triangleDictionary = new Dictionary<int, List<Triangle>>();
 
@@ -29,12 +32,19 @@ public class MeshGenerator : MonoBehaviour
         }
 
         Mesh mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        cave.mesh = mesh;
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
 
-        CreateWallMesh();
+        if (is2D)
+        {
+            Generate2DColliders();
+        }
+        else
+        {
+            CreateWallMesh();
+        }
     }
 
     void CreateWallMesh()
@@ -67,8 +77,34 @@ public class MeshGenerator : MonoBehaviour
         wallMesh.vertices = wallVertices.ToArray();
         wallMesh.triangles = wallTriangles.ToArray();
         walls.mesh = wallMesh;
-    }
 
+        MeshCollider meshCollider = walls.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = wallMesh;
+    }
+    void Generate2DColliders()
+    {
+
+        EdgeCollider2D[] currentColliders = gameObject.GetComponents<EdgeCollider2D>();
+        for (int i = 0; i < currentColliders.Length; i++)
+        {
+            Destroy(currentColliders[i]);
+        }
+
+        CalculateMeshOutlines();
+
+        foreach (List<int> outline in outlines)
+        {
+            EdgeCollider2D edgeCollider = gameObject.AddComponent<EdgeCollider2D>();
+            Vector2[] edgePoints = new Vector2[outline.Count];
+
+            for (int i = 0; i < outline.Count; i++)
+            {
+                edgePoints[i] = new Vector2(vertices[outline[i]].x, vertices[outline[i]].z);
+            }
+            edgeCollider.points = edgePoints;
+        }
+
+    }
     public void MeshFromPoints(params Node[] points)
     {
         AssignVertices(points);
