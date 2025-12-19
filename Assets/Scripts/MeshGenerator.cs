@@ -103,7 +103,6 @@ public class MeshGenerator : MonoBehaviour
             }
             edgeCollider.points = edgePoints;
         }
-
     }
     public void MeshFromPoints(params Node[] points)
     {
